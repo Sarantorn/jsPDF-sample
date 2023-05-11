@@ -1,60 +1,201 @@
-import { Component } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import {ExcelService} from "./service/ExcelService.service";
+import {HttpClient, HttpHeaders} from "@angular/common/http";
+import * as http from "http";
+import {ResponseApi} from "./model/response";
+import * as XLSX from "xlsx";
+import * as XLSXStyle from 'xlsx-style';
 
+import * as ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+import {map} from "rxjs";
+const httpOptions = {
+  headers: new HttpHeaders({
+    'content-type': 'application/json;charset=UTF-8'
+  }),
+};
 
 let products = [
   {
     name: 'Apples',
     price: 0.99,
+    remark: "test",
   },
   {
     name: 'Bread',
     price: 2.49,
+    remark: "test",
   },
   {
     name: 'Milk.',
     price: 1.79,
+    remark: "test",
   },
   {
     name: 'Eggs',
     price: 1.49,
+    remark: "test",
   },
   {
     name: 'Cheese',
     price: 3.99,
+    remark: "test",
   },
-  {
-    name: 'Reduces fire damage, nullifies fireblight and blastblight, and prevents damage from hot enviroments.',
-    price: 3.99,
-  },
-  {
-    name: 'Reduces fire damage, nullifies fireblight and blastblight, and prevents damage from hot enviroments.',
-    price: 3.99,
-  },
-  {
-    name: 'Reduces fire damage, nullifies fireblight and blastblight, and prevents damage from hot enviroments.',
-    price: 3.99,
-  },
-  {
-    name: 'Reduces fire damage, nullifies fireblight and blastblight, and prevents damage from hot enviroments.',
-    price: 3.99,
-  },
-  {
-    name: 'Reduces fire damage, nullifies fireblight and blastblight, and prevents damage from hot enviroments.',
-    price: 3.99,
-  },
-  {
-    name: 'Reduces fire damage, nullifies fireblight and blastblight, and prevents damage from hot enviroments.',
-    price: 3.99,
-  }
 ];
+
+let data:any
+let col:any
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent {
+export class AppComponent   {
+  constructor (
+    private http:HttpClient,
+    private excelService:ExcelService) {
+
+  }
+  generateExcel(){
+    console.time('generateExcel');
+    this.excelService.exportExcel(products,"test")
+
+
+
+
+
+
+
+    let url = "https://data.wa.gov/api/views/f6w7-q2d2/rows.json?accessType=DOWNLOAD"
+    this.http.get<any>(url).subscribe((res)=>{
+      //console.log(res)
+     data = res.data;
+     col = res.meta.view.columns
+      let columnNames = col.map((col: any ) => {
+        return col.name
+      });
+      let mappedData = data.map((row:any) => {
+        let obj:any = {};
+        row.forEach((val:any, index:any) => {
+          obj[columnNames[index]] = val;
+        });
+        return obj;
+      });
+      //
+      // console.log(columnNames)
+       console.log(mappedData)
+      //this.excelService.exportExcel(products,"test")
+    })
+
+  }
+
+
+
+
+
+
+
+
+  generateExcelV2(){
+    console.time('generateExcel');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Products');
+    //
+    // worksheet.columns = [
+    //   { header: 'Name', key: 'remark' },
+    //   { header: 'Price', key: 'name' },
+    // ];
+    //
+    // products.forEach(product => {
+    //   worksheet.addRow(product);
+    // });
+    //
+    // workbook.xlsx.writeBuffer().then(buffer => {
+    //   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    //   saveAs(blob, 'Products.xlsx');
+    // });
+
+
+    let url = "https://data.wa.gov/api/views/f6w7-q2d2/rows.json?accessType=DOWNLOAD"
+    this.http.get<any>(url).subscribe((res)=>{
+
+      //console.log(res)
+      data = res.data;
+      col = res.meta.view.columns
+
+      const columns = col.map((col:any) => ({
+        header: col.name,
+        key: this.camelCase(col.name),
+      }));
+
+      worksheet.columns = columns
+
+      let mappedData = data.map((row:any) => {
+        let obj:any = {};
+        row.forEach((val:any, index:any) => {
+          obj[columns[index].key] = val;
+        });
+        worksheet.addRow(obj);
+        return obj;
+      });
+
+      console.log(col)
+      console.log(columns)
+      console.log(mappedData)
+
+
+
+      // mappedData.forEach((data:any) => {
+      //   worksheet.addRow(data);
+      // });
+
+      workbook.xlsx.writeBuffer().then(buffer => {
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        saveAs(blob, 'test.xlsx');
+        console.timeEnd('generateExcel');
+      });
+    })
+
+
+  }
+
+
+
+
+
+
+
+
+
+
+  camelCase(str:any) {
+    return str
+      .replace(/\s(.)/g, function(a:any) {
+        return a.toUpperCase();
+      })
+      .replace(/\s/g, '')
+      .replace(/^(.)/, function(b:any) {
+        return b.toLowerCase();
+      });
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   generatePDF() {
     // Create a new instance of jsPDF
     const doc = new jsPDF({
@@ -62,9 +203,6 @@ export class AppComponent {
       unit: 'mm',
       format: 'a7' // Set the format to a7 (74 x 105 mm)
     });
-
-
-
 
     // Add header content
     doc.setFontSize(20);
@@ -112,7 +250,7 @@ export class AppComponent {
     //   products.push(products[4])
     // }
 
-    //console.log(products)
+    ////console.log(products)
 
       await Promise.all(
         products.map((data, index) => {
@@ -124,7 +262,7 @@ export class AppComponent {
           body.push(row)
         }
       )).then(value => {
-        //console.log(body)
+        ////console.log(body)
 
           const doc = new jsPDF({
             orientation: 'portrait',
@@ -138,7 +276,7 @@ export class AppComponent {
             align: 'center'
           });
 
-          console.log(doc.getTextDimensions("Header"))
+          //console.log(doc.getTextDimensions("Header"))
 
 
 
@@ -182,7 +320,7 @@ export class AppComponent {
               });
 
               test += d.cursor?.y!
-              console.log("cursor y ",d.cursor?.y)
+              //console.log("cursor y ",d.cursor?.y)
 
 
               if (d.pageNumber === 1) {
@@ -190,10 +328,10 @@ export class AppComponent {
 
 
                 height += d.table.head[0].height;
-                console.log("head",height)
+                //console.log("head",height)
 
                 for(let i=0; i < d.table.body.length; i++){
-                  //console.log(d.table.body[i].height)
+                  ////console.log(d.table.body[i].height)
 
                   height += d.table.body[i].height;
                 }
@@ -208,15 +346,15 @@ export class AppComponent {
           doc.save('table.pdf')
 
 
-        console.log("height table",height)
-        console.log("cursor y " , test)
+        //console.log("height table",height)
+        //console.log("cursor y " , test)
 
-        console.log(doc.internal.pageSize.width)
-        console.log(doc.internal.pageSize.height)
-        console.log(doc.internal.pages)
+        //console.log(doc.internal.pageSize.width)
+        //console.log(doc.internal.pageSize.height)
+        //console.log(doc.internal.pages)
         // let newHeight = height + hHeader + 2*(marginY + startY) + textHeightHeader
         //
-        // console.log(newHeight)
+        // //console.log(newHeight)
 
         const doc2 = new jsPDF({
           orientation: 'portrait',
@@ -252,7 +390,7 @@ export class AppComponent {
 
 
               test += d.cursor?.y!
-              console.log("cursor y ",d.cursor?.y)
+              //console.log("cursor y ",d.cursor?.y)
 
 
               if (d.pageNumber === 1) {
@@ -264,10 +402,10 @@ export class AppComponent {
 
 
                 height += d.table.head[0].height;
-                console.log("head",height)
+                //console.log("head",height)
 
                 for(let i=0; i < d.table.body.length; i++){
-                  //console.log(d.table.body[i].height)
+                  ////console.log(d.table.body[i].height)
 
                   height += d.table.body[i].height;
                 }
@@ -280,7 +418,7 @@ export class AppComponent {
 
         )
 
-          console.log(doc2)
+          //console.log(doc2)
 //
 
         doc2.save('newTable.pdf')
@@ -288,9 +426,8 @@ export class AppComponent {
           doc2.output('dataurlnewwindow');
         }
       )
-
-
   }
+
 }
 
 
