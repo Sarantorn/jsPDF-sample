@@ -5,19 +5,14 @@ import * as XLSXStyle from 'xlsx-style';
   providedIn: 'root',
 })
 export class ExcelService {
-  title = 'export-excel';
-
-  exportExcel(list:any,fileName:any): void {
-    let heading = [
-      ["FirstName", "Last Name", "Email"],
-    ];
+  exportExcel(list:any,heading:any,fileName:any): void {
 
     /* generate workbook and add the worksheet */
-    let ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(list);
     let wb: XLSX.WorkBook = XLSX.utils.book_new();
 
-    /* change name header */
-    // const ws = XLSX.utils.json_to_sheet(list, {skipHeader: true});
+    let ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(list);
+    /* for change name header */
+    // let ws = XLSX.utils.json_to_sheet(list, {skipHeader: true});
     // XLSX.utils.sheet_add_aoa(ws, heading);
 
     /* add worksheet to workbook */

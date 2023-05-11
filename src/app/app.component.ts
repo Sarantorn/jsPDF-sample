@@ -3,56 +3,52 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import {ExcelService} from "./service/ExcelService.service";
 import {HttpClient, HttpHeaders} from "@angular/common/http";
-import * as http from "http";
-import {ResponseApi} from "./model/response";
-import * as XLSX from "xlsx";
-import * as XLSXStyle from 'xlsx-style';
-
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-import {map} from "rxjs";
-const httpOptions = {
-  headers: new HttpHeaders({
+headers: new HttpHeaders({
     'content-type': 'application/json;charset=UTF-8'
-  }),
-};
+  })
 
-let products = [
-  {
-    name: 'Apples',
-    price: 0.99,
-    remark: "test",
-  },
-  {
-    name: 'Bread',
-    price: 2.49,
-    remark: "test",
-  },
-  {
-    name: 'Milk.',
-    price: 1.79,
-    remark: "test",
-  },
-  {
-    name: 'Eggs',
-    price: 1.49,
-    remark: "test",
-  },
-  {
-    name: 'Cheese',
-    price: 3.99,
-    remark: "test",
-  },
-];
 
-let data:any
-let col:any
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 export class AppComponent   {
+  products = [
+    {
+      name: 'Apples',
+      price: 0.99,
+      remark: "test",
+    },
+    {
+      name: 'Bread',
+      price: 2.49,
+      remark: "test",
+    },
+    {
+      name: 'Milk.',
+      price: 1.79,
+      remark: "test",
+    },
+    {
+      name: 'Eggs',
+      price: 1.49,
+      remark: "test",
+    },
+    {
+      name: 'Cheese',
+      price: 3.99,
+      remark: "test",
+    },
+  ];
+
+  JSON = JSON
+  data:any
+  col:any
+
   constructor (
     private http:HttpClient,
     private excelService:ExcelService) {
@@ -60,7 +56,11 @@ export class AppComponent   {
   }
   generateExcel(){
     console.time('generateExcel');
-    this.excelService.exportExcel(products,"test")
+    let heading = [
+      ["Name", "Price", "Remark"],
+    ];
+
+    //this.excelService.exportExcel(this.products,heading,"test")
 
 
 
@@ -68,25 +68,39 @@ export class AppComponent   {
 
 
 
-    let url = "https://data.wa.gov/api/views/f6w7-q2d2/rows.json?accessType=DOWNLOAD"
+
+
+
+    // this.http.get(`./assets/generated.json`).subscribe((res: any) => {
+    //   this.data = res
+    //   this.excelService.exportExcel(this.data,heading,"test")
+    // });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    let url = "https://jsonplaceholder.typicode.com/photos"
     this.http.get<any>(url).subscribe((res)=>{
       //console.log(res)
-     data = res.data;
-     col = res.meta.view.columns
-      let columnNames = col.map((col: any ) => {
-        return col.name
-      });
-      let mappedData = data.map((row:any) => {
-        let obj:any = {};
-        row.forEach((val:any, index:any) => {
-          obj[columnNames[index]] = val;
-        });
-        return obj;
-      });
-      //
-      // console.log(columnNames)
-       console.log(mappedData)
-      //this.excelService.exportExcel(products,"test")
+      this.data = res;
+
+      //this.excelService.exportExcel(res,heading,"test")
     })
 
   }
@@ -122,17 +136,17 @@ export class AppComponent   {
     this.http.get<any>(url).subscribe((res)=>{
 
       //console.log(res)
-      data = res.data;
-      col = res.meta.view.columns
+      this.data = res.data;
+      this.col = res.meta.view.columns
 
-      const columns = col.map((col:any) => ({
+      const columns = this.col.map((col:any) => ({
         header: col.name,
         key: this.camelCase(col.name),
       }));
 
       worksheet.columns = columns
 
-      let mappedData = data.map((row:any) => {
+      let mappedData = this.data.map((row:any) => {
         let obj:any = {};
         row.forEach((val:any, index:any) => {
           obj[columns[index].key] = val;
@@ -141,7 +155,7 @@ export class AppComponent   {
         return obj;
       });
 
-      console.log(col)
+      console.log(this.col)
       console.log(columns)
       console.log(mappedData)
 
@@ -253,7 +267,7 @@ export class AppComponent   {
     ////console.log(products)
 
       await Promise.all(
-        products.map((data, index) => {
+        this.products.map((data, index) => {
           let row: any = []
           row.push(this.tempData(index + 1, 1, 'left'))
           row.push(this.tempData(data.name, 1, 'left'))
